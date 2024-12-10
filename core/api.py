@@ -49,9 +49,9 @@ class Client:
             peers = resp['peers']
         except:
             print("Could not connect to tracker, use local peers")
-            # peers = [
-            #     {'peer_id' :'peer5678901234567899', 'ip':'127.0.0.1', 'port':8000}
-            # ]
+            peers = [
+                {'peer_id' :'peer5678901234567899', 'ip':'127.0.0.1', 'port':8000}
+            ]
 
         self.downloaders[info_hash] =  Downloader(torrent, peers, TitOrTat())
         print("Starting download")
@@ -66,12 +66,12 @@ class Client:
 
 
 if __name__ == '__main__':
-    # client = Client()
-    # torret = client.add_torrent('test.torrent')
-    # client.download(torret.info_hash)
-
-
     client = Client()
-    client.create_torrent('test')
-    client.run_server()
+    torret = client.add_torrent('test.torrent')
+    client.download(torret.info_hash)
+
+
+    # client = Client()
+    # client.create_torrent('test')
+    # client.run_server()
     

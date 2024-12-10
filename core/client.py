@@ -26,7 +26,7 @@ class Downloader:
         self.requesting = set()
 
     def start(self):
-
+        print(self.peers)
         conn_threads = []
         for peer in self.peers:
             if peer['peer_id'] == PEER_ID:
@@ -136,8 +136,8 @@ class Downloader:
 
     
     def write_to_file(self, piece_index, piece):
-        # dir_name = 'haha/'
-        dir_name = ''  # If you want to change the directory
+        dir_name = 'haha/'
+        # dir_name = ''  # If you want to change the directory
 
         # Calculate the position of the current piece in the file sequence
         file_position = piece_index * PIECE_SIZE
