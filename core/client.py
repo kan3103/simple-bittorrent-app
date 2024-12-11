@@ -4,6 +4,7 @@ from messages import HandshakeMessage, InterestedMessage, RequestMessage,  Messa
 import socket
 import hashlib
 import requests
+import random
 
 def recv_all(sock, size):
     data = b''
@@ -26,7 +27,6 @@ class Downloader:
         self.requesting = set()
 
     def start(self):
-        print(self.peers)
         conn_threads = []
         for peer in self.peers:
             if peer['peer_id'] == PEER_ID:
@@ -39,16 +39,24 @@ class Downloader:
 
         # pieces = {k : v for k, v in sorted(self.pieces.items(), key=lambda item: len(item[1]))}
         self.pieces = sorted(self.pieces.items(), key=lambda item: len(item[1]))
+
         # key: conn, value: list of pieces index
         for piece_index, conns in self.pieces:   #piece = [conn1, conn2, ...]
             if len(conns) > 0:
-                for conn in conns:
-                    conn.sendall(InterestedMessage().encode())
-                    msg_rcv = conn.recv(5)
-                    msg = Message.decode(msg_rcv[4:])
-                    if isinstance(msg, UnchokeMessage):
-                        self.sources[conn].append(piece_index)
+                conn = random.choice(conns)
+                conn.sendall(InterestedMessage().encode())
+                msg_rcv = conn.recv(5)
+                msg = Message.decode(msg_rcv[4:])
+                if isinstance(msg, UnchokeMessage):
+                    self.sources[conn].append(piece_index)
+                # for conn in conns:
+                #     conn.sendall(InterestedMessage().encode())
+                #     msg_rcv = conn.recv(5)
+                #     msg = Message.decode(msg_rcv[4:])
+                #     if isinstance(msg, UnchokeMessage):
+                #         self.sources[conn].append(piece_index)
                 
+        print(self.sources)
         downloading_threads = []
 
 
@@ -105,7 +113,7 @@ class Downloader:
             self.requesting.add(piece_index)
         piece = b''
         begin = 0
-        # print(f"request for piece {piece_index} from {conn.getpeername()}")
+        print(f"request for piece {piece_index} from {conn.getpeername()}")
         while begin < PIECE_SIZE:
             conn.sendall(RequestMessage(piece_index, begin, BLOCK_SIZE).encode())
             length = int.from_bytes(conn.recv(4), 'big')
@@ -116,10 +124,10 @@ class Downloader:
             piece += Message.decode(msg_rcv).block
             begin += BLOCK_SIZE
             
-        # print(f"received piece {piece_index}, size {len(piece)}")
+        print(f"received piece {piece_index}, size {len(piece)}")
         piece_hash = hashlib.sha1(piece).digest()
         if self.torrent.pieces[piece_index] == piece_hash:
-            # print(f"Piece {piece_index} is correct")
+            print(f"Piece {piece_index} is correct")
             self.write_to_file(piece_index, piece)
             # write to bitfield, send have message
             self.requesting.remove(piece_index)
@@ -139,7 +147,7 @@ class Downloader:
     
     def write_to_file(self, piece_index, piece):
         # dir_name = 'haha/'
-        # dir_name = ''  # If you want to change the directory
+        dir_name = ''  # If you want to change the directory
 
         # Calculate the position of the current piece in the file sequence
         file_position = piece_index * PIECE_SIZE
