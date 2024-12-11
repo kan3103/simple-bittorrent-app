@@ -50,9 +50,8 @@ class Client:
         except:
             print("Could not connect to tracker, use local peers")
             peers = [
-                {'peer_id' :'peer5678901234567899', 'ip':'127.0.0.1', 'port':8000}
+                {'peer_id' :'peer5678901234567898', 'ip':'127.0.0.1', 'port':8000}
             ]
-
         self.downloaders[info_hash] =  Downloader(torrent, peers, TitOrTat())
         print("Starting download")
         Thread(target=self.downloaders[info_hash].start).start()

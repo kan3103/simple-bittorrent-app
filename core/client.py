@@ -91,11 +91,13 @@ class Downloader:
             return
         handshake_rcv = conn.recv(49 + len(PROTOCOL_NAME))
         handshake_msg = Message.decode(handshake_rcv)
-        return handshake_msg
+        bitfield_rcv = conn.recv(5 + len(self.pieces))
+        bitfield_msg = Message.decode(bitfield_rcv[4:])
+        return handshake_msg, bitfield_msg
     
     def request_piece(self, conn, piece_index):
-        # while piece_index in self.requesting:
-        #     pass
+        while piece_index in self.requesting:
+            pass
 
         if piece_index in self.downloaded_pieces:
             return False
@@ -136,7 +138,7 @@ class Downloader:
 
     
     def write_to_file(self, piece_index, piece):
-        dir_name = 'haha/'
+        # dir_name = 'haha/'
         # dir_name = ''  # If you want to change the directory
 
         # Calculate the position of the current piece in the file sequence

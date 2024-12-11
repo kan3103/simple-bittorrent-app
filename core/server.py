@@ -4,6 +4,24 @@ from constants import PIECE_SIZE, PROTOCOL_NAME, PEER_ID
 import socket
 from threading import Thread
 
+def get_bitfield(torrent):
+    total_length = sum(file["length"] for file in torrent.files_info)
+    num_pieces = total_length // PIECE_SIZE + 1
+
+    bitfield = bytearray(num_pieces)
+    files = []
+
+    for file in torrent.files_info:
+        files.append(file["path"])
+    
+    pieces = generate_pieces(files)
+    original_pieces = torrent.pieces
+    
+    for (i, piece) in enumerate(pieces):
+        if piece in original_pieces:
+            bitfield[i] ^= 0x01
+    
+    return bitfield
 
 class Server:
     def __init__(self, torrents , port, strategy):
@@ -13,9 +31,9 @@ class Server:
         self.port = port
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
         self.strategy = strategy
         self.peer_id = PEER_ID
+        self.bitfield = {info_hash: get_bitfield(torrent) for info_hash, torrent in torrents.items()}
         
     def start(self):
         self.server.bind(('0.0.0.0', self.port))
@@ -59,8 +77,10 @@ class Server:
             return
         else:
             conn.sendall(b'\x00') #send anything not 0xFF
+            self.bitfield[handshake_rcv.info_hash] = get_bitfield(self.torrents[handshake_rcv.info_hash])
             self.conns[conn] = self.torrents[handshake_rcv.info_hash]
             conn.sendall(HandshakeMessage(PROTOCOL_NAME, handshake_rcv.info_hash, self.peer_id).encode())
+            conn.sendall(BitfieldMessage(self.bitfield[handshake_rcv.info_hash]).encode())
             Thread(target=self.handle_connection, args=(conn,)).start()
 
     def recv_request(self, conn, message):
